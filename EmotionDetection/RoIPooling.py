@@ -32,7 +32,8 @@ class RoIPoolingLayer(Layer):
 
     def call(self, X):
         '''
-        call: Returns the pooled output from the feature map for every RoI
+        call() 
+            Returns the pooled output from the feature map for every RoI
 
         Arguments
             X: list of two tensors [image, rois]

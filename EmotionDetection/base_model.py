@@ -3,6 +3,7 @@ import tensorflow as tf
 from keras import Model
 from keras import backend as K
 from keras.layers import Conv2D, MaxPooling2D
+
 class Base(Model):
     '''
     Arguments
