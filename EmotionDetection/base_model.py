@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from keras import Model
 from keras import backend as K
-from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import Input, Conv2D, MaxPooling2D
 
 class Base(Model):
     '''
@@ -50,10 +50,10 @@ class Base(Model):
         if self.input_tensor:
             input_shape = self.input_tensor.shape()
 
-        if not K.is_keras_tensor(input_tensor):
-            input_img = Input(tensor = input_tensor, shape = input_shape)
+        if not K.is_keras_tensor(self.input_tensor):
+            input_img = Input(tensor = self.input_tensor, shape = input_shape)
         else:
-            input_img = input_tensor
+            input_img = self.input_tensor
         
         #Block 1
         vgg = Conv2D(64, (3,3), activation='relu', padding='same', name='block1_conv1')(input_img)
