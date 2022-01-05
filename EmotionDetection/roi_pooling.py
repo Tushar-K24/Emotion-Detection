@@ -3,8 +3,10 @@ import math
 import tensorflow as tf
 from keras.layers import Layer, MaxPooling2D, Concatenate
 
-class RoIPoolingLayer(Layer):
+class RoIPooling(Layer):
     '''
+    RoIPooling()
+
     Arguments
         pool_size: int
             Size of the pooled region to be generated. pool_size = 7 will generate a 7x7 region
@@ -12,15 +14,14 @@ class RoIPoolingLayer(Layer):
         num_rois: int
             Number of RoIs to be used
 
-    Input
-        list of two tensors [X_img, X_roi] with shape:
-            X_img: (1, rows, cols, channels)
+    Methods
+        call()
+            Returns the pooled output from the feature map for every RoI
 
-            X_roi: (1, num_rois, 4) where 4 represents the ordering (x,y,w,h)
+        get_config()
+            Returns the current configuration of the pooling layer in the form of dictionary
 
-    Output
-        Output
-            a tensor with shape: (1, num_rois, pool_size, pool_size, channels)
+        
     '''
 
     def __init__(self, pool_size, num_rois, **kwargs):

@@ -5,15 +5,19 @@ from keras.layers import Layer, Input, Conv2D, MaxPooling2D
 
 class Base(Layer):
     '''
-    Input
-        input_tensor:
-            Input Image to be feeded into the CNN of shape (x,y,num_channels)
-            Default = None
-        trainable: 
-            True if the model is trainable
+    Base()
 
-    Output
-        Feature Map
+    Arguments
+        num_channels: int
+            number of channels in the input tensor
+            Default = 3
+
+    Methods
+        get_model() 
+            Transforms the input tensor to a feature map using a fully CNN architecture
+
+        get_config()
+            Returns the current configuration of the base layer in the form of dictionary
     '''
 
     def __init__(self, num_channels=3, **kwargs):
