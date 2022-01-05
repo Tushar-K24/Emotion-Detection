@@ -1,91 +1,93 @@
 import tensorflow as tf
 
-from keras import Model
 from keras import backend as K
-from keras.layers import Input, Conv2D, MaxPooling2D
+from keras.layers import Layer, Input, Conv2D, MaxPooling2D
 
-class Base(Model):
+class Base(Layer):
     '''
-    Arguments
+    Input
         input_tensor:
             Input Image to be feeded into the CNN of shape (x,y,num_channels)
             Default = None
-        
-        num_channels:
-            Number of channels in the input tensor (value passed only if input_tensor = None)
-            Default = 3 (for an RGB image)
-    
-    Input
         trainable: 
             True if the model is trainable
 
     Output
-        Base Model
+        Feature Map
     '''
 
-    def __init__(self, input_tensor=None, num_channels=3, **kwargs):
-        self.input_tensor = input_tensor
-        self.num_channels = num_channels
-        if input_tensor: #if input_tensor is given
-            self.num_channels = input_tensor.shape()[2]
+    def __init__(self, num_channels=3, **kwargs):
+        self.num_channels=num_channels  
+        self.base_model = 'VGG16' #default CNN architecture used
         super().__init__(**kwargs)
-    
-    def get_model(self, trainable=False):
+
+    def get_fmap(self, input_tensor=None, trainable=False):
         '''
         get_model() 
-            Returns a CNN model with only convolutional layers (No dense layers)
+            Transforms the input tensor to a feature map using a fully CNN architecture
 
             By Default, VGG16 is selected as the base model. If needed, change the architecture 
-            of the base model here.
+            of the base model in base_mode.py.
 
         Arguments
+            input_tensor:
+                Input Image to be feeded into the CNN of shape (x,y,num_channels)
+                Default = None
+
             trainable: bool
                 True: Model is trainable
                 False: Model is non-trainable
 
-        Output: Base model
+        Output: Feature Map
         '''
-
-        input_shape = (None, None, self.num_channels)
-        if self.input_tensor:
-            input_shape = self.input_tensor.shape()
-
-        if not K.is_keras_tensor(self.input_tensor):
-            input_img = Input(tensor = self.input_tensor, shape = input_shape)
-        else:
-            input_img = self.input_tensor
         
+        #if input_tensor is None
+        if not input_tensor:
+            input_shape = (None, None, self.num_channels)
+            input_tensor = Input(shape = input_shape)
+        
+        if not K.is_keras_tensor(input_tensor): #Converting input_tensor to appropriate dtype
+            input_img = Input(tensor = input_tensor)
+        else:
+            input_img = input_tensor
+
+        self.tensor_shape = input_img.get_shape() #input_shape
+
         #Block 1
-        vgg = Conv2D(64, (3,3), activation='relu', padding='same', name='block1_conv1')(input_img)
-        vgg = Conv2D(64, (3,3), activation='relu', padding='same', name='block1_conv2')(vgg)
-        vgg = MaxPooling2D((2,2), strides=(2,2), name='block1_pool')(vgg)
+        fmap = Conv2D(64, (3,3), activation='relu', padding='same', name='block1_conv1')(input_img)
+        fmap = Conv2D(64, (3,3), activation='relu', padding='same', name='block1_conv2')(fmap)
+        fmap = MaxPooling2D((2,2), strides=(2,2), name='block1_pool')(fmap)
 
         #Block 2
-        vgg = Conv2D(128, (3,3), activation='relu', padding='same', name='block2_conv1')(vgg)
-        vgg = Conv2D(128, (3,3), activation='relu', padding='same', name='block2_conv2')(vgg)
-        vgg = MaxPooling2D((2,2), strides=(2,2), name='block2_pool')(vgg)
+        fmap = Conv2D(128, (3,3), activation='relu', padding='same', name='block2_conv1')(fmap)
+        fmap = Conv2D(128, (3,3), activation='relu', padding='same', name='block2_conv2')(fmap)
+        fmap = MaxPooling2D((2,2), strides=(2,2), name='block2_pool')(fmap)
 
         #Block 3
-        vgg = Conv2D(256, (3,3), activation='relu', padding='same', name='block3_conv1')(vgg)
-        vgg = Conv2D(256, (3,3), activation='relu', padding='same', name='block3_conv2')(vgg)
-        vgg = Conv2D(256, (3,3), activation='relu', padding='same', name='block3_conv3')(vgg)
-        vgg = MaxPooling2D((2,2), strides=(2,2), name='block3_pool')(vgg)
+        fmap = Conv2D(256, (3,3), activation='relu', padding='same', name='block3_conv1')(fmap)
+        fmap = Conv2D(256, (3,3), activation='relu', padding='same', name='block3_conv2')(fmap)
+        fmap = Conv2D(256, (3,3), activation='relu', padding='same', name='block3_conv3')(fmap)
+        fmap = MaxPooling2D((2,2), strides=(2,2), name='block3_pool')(fmap)
 
         #Block 4
-        vgg = Conv2D(512, (3,3), activation='relu', padding='same', name='block4_conv1')(vgg)
-        vgg = Conv2D(512, (3,3), activation='relu', padding='same', name='block4_conv2')(vgg)
-        vgg = Conv2D(512, (3,3), activation='relu', padding='same', name='block4_conv3')(vgg)
-        vgg = MaxPooling2D((2,2), strides=(2,2), name='block4_pool')(vgg)
+        fmap = Conv2D(512, (3,3), activation='relu', padding='same', name='block4_conv1')(fmap)
+        fmap = Conv2D(512, (3,3), activation='relu', padding='same', name='block4_conv2')(fmap)
+        fmap = Conv2D(512, (3,3), activation='relu', padding='same', name='block4_conv3')(fmap)
+        fmap = MaxPooling2D((2,2), strides=(2,2), name='block4_pool')(fmap)
 
         #Block 5
-        vgg = Conv2D(512, (3,3), activation='relu', padding='same', name='block5_conv1')(vgg)
-        vgg = Conv2D(512, (3,3), activation='relu', padding='same', name='block5_conv2')(vgg)
-        vgg = Conv2D(512, (3,3), activation='relu', padding='same', name='block5_conv3')(vgg)
+        fmap = Conv2D(512, (3,3), activation='relu', padding='same', name='block5_conv1')(fmap)
+        fmap = Conv2D(512, (3,3), activation='relu', padding='same', name='block5_conv2')(fmap)
+        fmap = Conv2D(512, (3,3), activation='relu', padding='same', name='block5_conv3')(fmap)
         #We won't consider the last pooling layer
-        #vgg = MaxPooling2D((2,2), strides=(2,2), name='block5_pool')(vgg) 
+        #fmap = MaxPooling2D((2,2), strides=(2,2), name='block5_pool')(fmap) 
 
-        if not trainable:
-            for layer in vgg:
-                layer.trainable = False
-        
-        return vgg
+        return fmap
+
+    def get_config(self):
+        config = {'base': self.base_model, 
+                  'channels': self.num_channels,
+                  'input_shape': self.tensor_shape}
+        base_config = super().get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
