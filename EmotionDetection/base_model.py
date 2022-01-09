@@ -1,5 +1,3 @@
-import tensorflow as tf
-
 from keras import backend as K
 from keras.layers import Layer, Input, Conv2D, MaxPooling2D
 
