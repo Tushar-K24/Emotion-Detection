@@ -1,4 +1,3 @@
-import tensorflow as tf
 from keras.layers import Layer,Conv2D
 
 class RPN(Layer):
@@ -41,6 +40,6 @@ class RPN(Layer):
         x = Conv2D(512, (3,3), padding='same', activation='relu', name='rpn_conv')(self.fmap)
         
         class_layer = Conv2D(num_anchors, (1,1), activation='sigmoid', name='rpn_class_layer')(x) #classification layer
-        reg_layer = Conv2D(4*num_anchors, (1,1), activation='sigmoid', name='rpn_reg_layer')(x) #bbox regression layer
-
+        reg_layer = Conv2D(4*num_anchors, (1,1), activation='linear', name='rpn_reg_layer')(x) #bbox regression layer
+        
         return [class_layer, reg_layer]
