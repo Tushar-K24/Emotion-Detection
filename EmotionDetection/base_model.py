@@ -53,7 +53,7 @@ class Base(Layer):
         else:
             input_img = input_tensor
 
-        self.tensor_shape = input_img.get_shape() #input_shape
+        self.img_shape = input_img.get_shape() #input_shape
 
         #Block 1
         fmap = Conv2D(64, (3,3), activation='relu', padding='same', name='block1_conv1')(input_img)
@@ -83,13 +83,18 @@ class Base(Layer):
         fmap = Conv2D(512, (3,3), activation='relu', padding='same', name='block5_conv3')(fmap)
         #We won't consider the last pooling layer
         #fmap = MaxPooling2D((2,2), strides=(2,2), name='block5_pool')(fmap) 
-
+        
+        self.fmap = fmap
+        self.fmap_shape = fmap.get_shape() #output shape
+        
         return fmap
 
     def get_config(self):
         config = {'base': self.base_model, 
                   'channels': self.num_channels,
-                  'input_shape': self.tensor_shape}
+                  'input_shape': self.img_shape,
+                  'fmap_shape': self.fmap_shape}
+
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
