@@ -19,9 +19,7 @@ class RoIPooling(Layer):
             Returns the pooled output from the feature map for every RoI
 
         get_config()
-            Returns the current configuration of the pooling layer in the form of dictionary
-
-        
+            Returns the current configuration of the pooling layer in the form of dictionary  
     '''
 
     def __init__(self, pool_size, num_rois, **kwargs):
@@ -31,9 +29,9 @@ class RoIPooling(Layer):
 
         super().__init__(**kwargs)
 
-    def call(self, X):
+    def __call__(self, X):
         '''
-        call() 
+        __call__() 
             Returns the pooled output from the feature map for every RoI
 
         Arguments
