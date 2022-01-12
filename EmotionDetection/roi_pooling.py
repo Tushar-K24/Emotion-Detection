@@ -15,7 +15,7 @@ class RoIPooling(Layer):
             Number of RoIs to be used
 
     Methods
-        call()
+        __call__()
             Returns the pooled output from the feature map for every RoI
 
         get_config()
