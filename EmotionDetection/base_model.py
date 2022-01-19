@@ -1,6 +1,24 @@
 from keras import backend as K
 from keras.layers import Layer, Input, Conv2D, MaxPooling2D
 
+def get_output_dims(width, height):
+    '''
+    get_output_dims()
+        Returns the width and height of the fmap for the given input width and height
+
+    Arguments
+        width: 
+            Width of the input image
+        height:
+            Height of the input image
+
+    Output: 
+        Width of the feature map
+        Height of the feature map
+    '''
+    rescale = lambda x: x//16 #16 because the VGG architecture used has 4 max pooling layers
+    return rescale(width), rescale(height)
+    
 class Base(Layer):
     '''
     Base()
@@ -22,24 +40,6 @@ class Base(Layer):
         self.num_channels=num_channels  
         self.base_model = 'VGG16' #default CNN architecture used
         super().__init__(**kwargs)
-
-    def get_output_dims(self, width, height):
-        '''
-        get_output_dims()
-            Returns the width and height of the fmap for the given input width and height
-
-        Arguments
-            width: 
-                Width of the input image
-            height:
-                Height of the input image
-
-        Output: 
-            Width of the feature map
-            Height of the feature map
-        '''
-        rescale = lambda x: x//16 #16 because the VGG architecture used has 4 max pooling layers
-        return rescale(width), rescale(height)
 
     def get_fmap(self, input_tensor=None, trainable=False):
         '''
