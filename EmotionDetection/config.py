@@ -1,22 +1,15 @@
-import numpy as np
+import math
 
-class Config:
+'''
+Default configurations are stored here
+(to be used in dependencies)
+'''
+#default base model
+base_model = 'vgg'
 
-    def __init__(self):
+#anchor boxes
+anchor_box_scales = [128, 256, 512] #anchor box scales
+anchor_box_ratios = [[1,1], [1,math.sqrt(2)], [math.sqrt(2),1]]
 
-        #Whether to print the process or not
-        self.verbose = True
-
-        #base model
-        self.base_model = 'vgg'
-
-        #Anchor box scales
-        self.anchor_box_scales = [128,256,512]
-
-        #Anchor box ratios
-        self.anchor_box_ratios = [[1,1],[1./np.sqrt(2),1],[1,1./np.sqrt(2)]]
-
-        #image size (size of the smaller side of the image)
-        self.im_size = 600
-
-        #no. of RoI
+#downscaling
+rpn_stride = 16
