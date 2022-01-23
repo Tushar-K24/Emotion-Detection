@@ -38,9 +38,19 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
     anchor_box_ratios = C.anchor_box_ratios
     downscale = C.rpn_stride
 
-    gt_bboxes = np.zeros((len(imdb['bboxes'],4)))
+    num_bboxes = len(imdb['bboxes'])
+    num_anchors = len(anchor_box_ratios)*len(anchor_box_scales)
 
+    gt_bboxes = np.zeros((num_bboxes,4))
     out_width, out_height = get_output_dims(resized_width, resized_height)
+
+    best_iou_for_bbox = np.zeros(num_bboxes)
+    best_anchor_for_bbox = np.zeros((num_bboxes,4))
+    best_dx_for_bbox = np.zeros((num_bboxes,4)) # tx, ty, tw, th (for loss)
+
+    y_rpn_overlap = np.zeros((out_width, out_height, num_anchors)) #represents if that anchor overlaps with gt_bbox
+    y_is_box_valid = np.zeros((out_width, out_height, num_anchors)) #represents if that anchor has an object 
+    y_rpn_regr = np.zeros((out_width, out_height, 4*num_anchors)) #tx,ty,tw,th for every positive class
 
     # calculating ground truth bounding boxes
     for idx, bbox in enumerate(imdb['bboxes']):
@@ -64,5 +74,39 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
                     y2 = downscale*y + anchor_y/2
                     if y1<0 or y2>=resized_height: #points out of image
                         continue
+                    
+                    anchor_box = [x1,y1,x2,y2] 
+                    
+                    bbox_type = 'neg' #initialize with negative
+                    for bbox_num in range(num_bboxes): #iterate for every gt_bbox
 
-                    #the anchor boxes are valid, so proceed accordingly    
+                        curr_iou = iou(anchor_box, gt_bboxes[bbox_num]) #iou of anchor_box and current gt
+                        
+                        if curr_iou > C.rpn_max_overlap or curr_iou>best_iou_for_bbox[bbox_num]:
+                            #center of gt bbox
+                            cx = (gt_bboxes[bbox_num,0] + gt_bboxes[bbox_num,2])/2
+                            cy = (gt_bboxes[bbox_num,1] + gt_bboxes[bbox_num,3])/2
+                            #center of anchor box
+                            cxa = (x1 + x2)/2
+                            cya = (y1 + y2)/2
+
+                            #calculating dx (from the original paper)
+                            tx = (cx - cxa)/(x2 - x1)
+                            ty = (cy - cya)/(y2 - y1)
+                            tw = np.log((gt_bboxes[bbox_num,2]-gt_bboxes[bbox_num,0])/(x2-x1))
+                            th = np.log((gt_bboxes[bbox_num,3]-gt_bboxes[bbox_num,1])/(y2-y1))
+                        
+                        if imdb['class'][bbox_num]!='bg':
+                            #mapping every gt_bbox with an anchor box to see which one's the best
+                            if curr_iou>best_iou_for_bbox[bbox_num]:
+                                best_iou_for_bbox[bbox_num] = curr_iou
+                                best_anchor_for_bbox[bbox_num,:] = anchor_box
+                                best_dx_for_bbox[bbox_num,:] = [tx,ty,tw,th]
+                                
+                                if curr_iou>C.rpn_max_overlap:
+                                    bbox_type = 'pos'
+                                elif C.rpn_min_overlap<curr_iou<C.rpn_max_overlap and bbox_type == 'neg':
+                                    bbox_type = 'neutral'
+
+                    if bbox_type == 'neg':
+                        pass
