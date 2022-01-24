@@ -78,6 +78,9 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
                     anchor_box = [x1,y1,x2,y2] 
                     
                     bbox_type = 'neg' #initialize with negative
+                    
+                    best_iou_for_anchor = 0 #for setting y_rpn_regr
+
                     for bbox_num in range(num_bboxes): #iterate for every gt_bbox
 
                         curr_iou = iou(anchor_box, gt_bboxes[bbox_num]) #iou of anchor_box and current gt
@@ -103,10 +106,40 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
                                 best_anchor_for_bbox[bbox_num,:] = anchor_box
                                 best_dx_for_bbox[bbox_num,:] = [tx,ty,tw,th]
                                 
+                                if curr_iou>best_iou_for_anchor:
+                                    best_iou_for_anchor = curr_iou
+                                    best_rpn_regr = [tx,ty,tw,th]
+
                                 if curr_iou>C.rpn_max_overlap:
                                     bbox_type = 'pos'
                                 elif C.rpn_min_overlap<curr_iou<C.rpn_max_overlap and bbox_type == 'neg':
                                     bbox_type = 'neutral'
+                    
+                    idx = len(anchor_box_ratios)*anchor_scale + anchor_ratio
 
                     if bbox_type == 'neg':
-                        pass
+                        y_is_box_valid[x,y,idx] = 1
+                        y_rpn_overlap[x,y,idx] = 0
+
+                    elif bbox_type == 'neutral':
+                        y_is_box_valid[x,y,idx] = 0
+                        y_rpn_overlap[x,y,idx] = 0
+                    
+                    else:
+                        y_is_box_valid[x,y,idx] = 1
+                        y_rpn_overlap[x,y,idx] = 1
+                        y_rpn_regr[x,y,4*idx:4*idx+4] = best_rpn_regr
+                    
+    #reshaping the arrays to get num_anchors first
+    y_is_box_valid = np.transpose(y_is_box_valid,(2,0,1))
+    y_rpn_overlap = np.transpose(y_rpn_overlap,(2,0,1))
+    y_rpn_regr = np.transpose(y_rpn_regr,(2,0,1))
+
+    #total count of samples should not exceed 256, 128 for both
+    positive_anchors = np.where((y_is_box_valid==1)&(y_rpn_overlap==1)) #stores the indices of positive anchors
+    negative_anchors = np.where((y_is_box_valid==1)&(y_rpn_overlap==0)) #stores the indices of negative anchors
+
+    num_pos, num_neg = len(positive_anchors[0]), len(negative_anchors[0])
+
+    #num_pos and num_neg should not be greater than 128
+    
