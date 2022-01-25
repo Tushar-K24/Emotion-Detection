@@ -18,5 +18,5 @@ rpn_stride = 16
 rpn_max_overlap = 0.7
 rpn_min_overlap = 0.3
 
-#total no. of anchor boxes to process
+#total no. of anchor boxes to process in the mini batch
 num_samples = 256
