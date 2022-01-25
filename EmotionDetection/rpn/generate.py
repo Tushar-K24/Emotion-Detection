@@ -1,4 +1,5 @@
 import sys
+import random
 sys.path.append('..') #system path is now the parent directory
 
 
@@ -130,16 +131,28 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
                         y_rpn_overlap[x,y,idx] = 1
                         y_rpn_regr[x,y,4*idx:4*idx+4] = best_rpn_regr
                     
-    #reshaping the arrays to get num_anchors first
-    y_is_box_valid = np.transpose(y_is_box_valid,(2,0,1))
-    y_rpn_overlap = np.transpose(y_rpn_overlap,(2,0,1))
-    y_rpn_regr = np.transpose(y_rpn_regr,(2,0,1))
+    #converting the numpy arrays from 3D to 4D
+    y_is_box_valid = np.expand_dims(y_is_box_valid, axis=0) #dims: (1,out_width, out_height, num_anchors)
+    y_rpn_overlap = np.expand_dims(y_rpn_overlap, axis=0) #dims: (1,out_width, out_height, num_anchors)
+    y_rpn_regr = np.expand_dims(y_rpn_regr, axis=0) #dims: (1,out_width, out_height, 4*num_anchors)
 
-    #total count of samples should not exceed 256, 128 for both
+    #total count of samples should not exceed 256, 128 for both ideally
     positive_anchors = np.where((y_is_box_valid==1)&(y_rpn_overlap==1)) #stores the indices of positive anchors
     negative_anchors = np.where((y_is_box_valid==1)&(y_rpn_overlap==0)) #stores the indices of negative anchors
 
     num_pos, num_neg = len(positive_anchors[0]), len(negative_anchors[0])
 
-    #num_pos and num_neg should not be greater than 128
+    if num_pos>C.num_samples/2: #turning extra positive anchors off
+        non_selected = random.sample(range(num_pos), num_pos-C.num_samples/2)
+        y_is_box_valid[num_pos[0][non_selected],num_pos[1][non_selected], num_pos[2][non_selected]]=0 
+        num_pos = C.num_samples/2
     
+    if num_neg>C.num_samples - num_pos: #turning extra negative anchors off
+        non_selected = random.sample(range(num_neg), num_neg + num_pos - C.num_samples)
+        y_is_box_valid[num_neg[0][non_selected], num_neg[1][non_selected], num_neg[2][non_selected]]=0 
+        num_neg = C.num_samples - num_pos
+
+    y_rpn_cls = np.concatenate([y_is_box_valid, y_rpn_overlap], axis=3) #dims: (1,out_width, out_height, 2*num_anchors)
+    y_rpn_regr = np.concatenate([np.repeat(y_rpn_overlap,4,axis=3),y_rpn_regr],axis=3) #dims: (1,out_width, out_height, 4*num_anchors)
+
+    return np.copy(y_rpn_cls), np.copy(y_rpn_regr), num_pos
