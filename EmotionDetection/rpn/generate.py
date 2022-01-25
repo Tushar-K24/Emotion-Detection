@@ -54,11 +54,11 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
     y_rpn_regr = np.zeros((out_width, out_height, 4*num_anchors)) #tx,ty,tw,th for every positive class
 
     # calculating ground truth bounding boxes
-    for idx, bbox in enumerate(imdb['bboxes']):
-        gt_bboxes[idx,0] = bbox['x1']*(resized_width/width)
-        gt_bboxes[idx,1] = bbox['y1']*(resized_height/height)
-        gt_bboxes[idx,2] = bbox['x2']*(resized_width/width)
-        gt_bboxes[idx,3] = bbox['y2']*(resized_height/height)
+    for idx, _ in enumerate(imdb['bboxes']):
+        gt_bboxes[idx,0] = imdb['x1']*(resized_width/width)
+        gt_bboxes[idx,1] = imdb['y1']*(resized_height/height)
+        gt_bboxes[idx,2] = imdb['x2']*(resized_width/width)
+        gt_bboxes[idx,3] = imdb['y2']*(resized_height/height)
         
     for anchor_scale in anchor_box_scales:
         for anchor_ratio in anchor_box_ratios:
@@ -155,4 +155,4 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
     y_rpn_cls = np.concatenate([y_is_box_valid, y_rpn_overlap], axis=3) #dims: (1,out_width, out_height, 2*num_anchors)
     y_rpn_regr = np.concatenate([np.repeat(y_rpn_overlap,4,axis=3),y_rpn_regr],axis=3) #dims: (1,out_width, out_height, 4*num_anchors)
 
-    return np.copy(y_rpn_cls), np.copy(y_rpn_regr), num_pos
+    return np.copy(y_rpn_cls), np.copy(y_rpn_regr), num_pos 
