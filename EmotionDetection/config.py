@@ -17,3 +17,6 @@ rpn_stride = 16
 #rpn overlaps
 rpn_max_overlap = 0.7
 rpn_min_overlap = 0.3
+
+#total no. of anchor boxes to process
+num_samples = 256
