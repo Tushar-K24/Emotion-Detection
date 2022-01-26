@@ -39,7 +39,7 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
     anchor_box_ratios = C.anchor_box_ratios
     downscale = C.rpn_stride
 
-    num_bboxes = len(imdb['bboxes'])
+    num_bboxes = len(imdb)
     num_anchors = len(anchor_box_ratios)*len(anchor_box_scales)
 
     gt_bboxes = np.zeros((num_bboxes,4))
@@ -54,14 +54,13 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
     y_rpn_regr = np.zeros((out_width, out_height, 4*num_anchors)) #tx,ty,tw,th for every positive class
 
     # calculating ground truth bounding boxes
-    for idx, _ in enumerate(imdb['bboxes']):
-        gt_bboxes[idx,0] = imdb['x1']*(resized_width/width)
-        gt_bboxes[idx,1] = imdb['y1']*(resized_height/height)
-        gt_bboxes[idx,2] = imdb['x2']*(resized_width/width)
-        gt_bboxes[idx,3] = imdb['y2']*(resized_height/height)
+    gt_bboxes[:,0] = imdb['x1']*(resized_width/width)
+    gt_bboxes[:,1] = imdb['y1']*(resized_height/height)
+    gt_bboxes[:,2] = imdb['x2']*(resized_width/width)
+    gt_bboxes[:,3] = imdb['y2']*(resized_height/height)
         
-    for anchor_scale in anchor_box_scales:
-        for anchor_ratio in anchor_box_ratios:
+    for anchor_scale_idx, anchor_scale in enumerate(anchor_box_scales):
+        for anchor_ratio_idx, anchor_ratio in enumerate(anchor_box_ratios):
             anchor_x = anchor_scale*anchor_ratio[0]
             anchor_y = anchor_scale*anchor_ratio[1]
 
@@ -116,7 +115,7 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
                                 elif C.rpn_min_overlap<curr_iou<C.rpn_max_overlap and bbox_type == 'neg':
                                     bbox_type = 'neutral'
                     
-                    idx = len(anchor_box_ratios)*anchor_scale + anchor_ratio
+                    idx = len(anchor_box_ratios)*anchor_scale_idx + anchor_ratio_idx
 
                     if bbox_type == 'neg':
                         y_is_box_valid[x,y,idx] = 1
@@ -131,11 +130,6 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
                         y_rpn_overlap[x,y,idx] = 1
                         y_rpn_regr[x,y,4*idx:4*idx+4] = best_rpn_regr
                     
-    #converting the numpy arrays from 3D to 4D
-    y_is_box_valid = np.expand_dims(y_is_box_valid, axis=0) #dims: (1,out_width, out_height, num_anchors)
-    y_rpn_overlap = np.expand_dims(y_rpn_overlap, axis=0) #dims: (1,out_width, out_height, num_anchors)
-    y_rpn_regr = np.expand_dims(y_rpn_regr, axis=0) #dims: (1,out_width, out_height, 4*num_anchors)
-
     #total count of samples should not exceed 256, 128 for both ideally
     positive_anchors = np.where((y_is_box_valid==1)&(y_rpn_overlap==1)) #stores the indices of positive anchors
     negative_anchors = np.where((y_is_box_valid==1)&(y_rpn_overlap==0)) #stores the indices of negative anchors
@@ -144,13 +138,18 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
 
     if num_pos>C.num_samples/2: #turning extra positive anchors off
         non_selected = random.sample(range(num_pos), num_pos-C.num_samples/2)
-        y_is_box_valid[num_pos[0][non_selected],num_pos[1][non_selected], num_pos[2][non_selected]]=0 
+        y_is_box_valid[positive_anchors[0][non_selected],positive_anchors[1][non_selected], positive_anchors[2][non_selected]]=0 
         num_pos = C.num_samples/2
     
     if num_neg>C.num_samples - num_pos: #turning extra negative anchors off
         non_selected = random.sample(range(num_neg), num_neg + num_pos - C.num_samples)
-        y_is_box_valid[num_neg[0][non_selected], num_neg[1][non_selected], num_neg[2][non_selected]]=0 
+        y_is_box_valid[negative_anchors[0][non_selected], negative_anchors[1][non_selected], negative_anchors[2][non_selected]]=0 
         num_neg = C.num_samples - num_pos
+    
+    #converting the numpy arrays from 3D to 4D
+    y_is_box_valid = np.expand_dims(y_is_box_valid, axis=0) #dims: (1,out_width, out_height, num_anchors)
+    y_rpn_overlap = np.expand_dims(y_rpn_overlap, axis=0) #dims: (1,out_width, out_height, num_anchors)
+    y_rpn_regr = np.expand_dims(y_rpn_regr, axis=0) #dims: (1,out_width, out_height, 4*num_anchors)
 
     y_rpn_cls = np.concatenate([y_is_box_valid, y_rpn_overlap], axis=3) #dims: (1,out_width, out_height, 2*num_anchors)
     y_rpn_regr = np.concatenate([np.repeat(y_rpn_overlap,4,axis=3),y_rpn_regr],axis=3) #dims: (1,out_width, out_height, 4*num_anchors)
