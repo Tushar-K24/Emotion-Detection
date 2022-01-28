@@ -103,7 +103,7 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
                             #mapping every gt_bbox with an anchor box to see which one's the best
                             if curr_iou>best_iou_for_bbox[bbox_num]:
                                 best_iou_for_bbox[bbox_num] = curr_iou
-                                best_anchor_for_bbox[bbox_num,:] = anchor_box
+                                best_anchor_for_bbox[bbox_num,:] = [x,y,anchor_scale_idx, anchor_ratio_idx]
                                 best_dx_for_bbox[bbox_num,:] = [tx,ty,tw,th]
                                 
                                 if curr_iou>best_iou_for_anchor:
@@ -129,7 +129,19 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
                         y_is_box_valid[x,y,idx] = 1
                         y_rpn_overlap[x,y,idx] = 1
                         y_rpn_regr[x,y,4*idx:4*idx+4] = best_rpn_regr
-                    
+
+    #adding the best ones as positive samples
+    for bbox_num in range(num_bboxes):
+        if best_iou_for_bbox[bbox_num]==0: #was never updated
+            continue
+
+        x,y,anchor_scale_idx, anchor_ratio_idx = best_anchor_for_bbox[bbox_num,:].astype(int)
+        
+        idx = len(anchor_box_ratios)*anchor_scale_idx + anchor_ratio_idx
+        y_is_box_valid[x,y,idx] = 1
+        y_rpn_overlap[x,y,idx] = 1
+        y_rpn_regr[x,y,4*idx:4*idx+4] = best_dx_for_bbox[bbox_num,:]
+                        
     #total count of samples should not exceed 256, 128 for both ideally
     positive_anchors = np.where((y_is_box_valid==1)&(y_rpn_overlap==1)) #stores the indices of positive anchors
     negative_anchors = np.where((y_is_box_valid==1)&(y_rpn_overlap==0)) #stores the indices of negative anchors
