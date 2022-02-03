@@ -54,10 +54,10 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
     y_rpn_regr = np.zeros((out_width, out_height, 4*num_anchors)) #tx,ty,tw,th for every positive class
 
     # calculating ground truth bounding boxes
-    gt_bboxes[:,0] = imdb['x1']*(resized_width/width)
-    gt_bboxes[:,1] = imdb['y1']*(resized_height/height)
-    gt_bboxes[:,2] = imdb['x2']*(resized_width/width)
-    gt_bboxes[:,3] = imdb['y2']*(resized_height/height)
+    gt_bboxes[:,0] = imdb['x1']
+    gt_bboxes[:,1] = imdb['y1']
+    gt_bboxes[:,2] = imdb['x2']
+    gt_bboxes[:,3] = imdb['y2']
         
     for anchor_scale_idx, anchor_scale in enumerate(anchor_box_scales):
         for anchor_ratio_idx, anchor_ratio in enumerate(anchor_box_ratios):
