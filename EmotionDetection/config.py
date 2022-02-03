@@ -8,8 +8,8 @@ Default configurations are stored here
 base_model = 'vgg'
 
 #anchor boxes
-anchor_box_scales = [64, 128, 256] #anchor box scales
-anchor_box_ratios = [[1,1], [1,math.sqrt(2)], [math.sqrt(2),1]] #anchor box ratios
+anchor_box_scales = [128, 256, 512] #anchor box scales
+anchor_box_ratios = [[1,1], [1/math.sqrt(2),math.sqrt(2)], [math.sqrt(2),1/math.sqrt(2)]] #anchor box ratios
 
 #downscaling
 rpn_stride = 16
