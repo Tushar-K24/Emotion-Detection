@@ -20,3 +20,8 @@ rpn_min_overlap = 0.3
 
 #total no. of anchor boxes to process in the mini batch 
 num_samples = 256
+
+#image augmentation
+horizontal_flip = True
+vertical_flip = False
+rotate = False
