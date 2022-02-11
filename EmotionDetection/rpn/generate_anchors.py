@@ -113,7 +113,7 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
                             #mapping every gt_bbox with an anchor box to see which one's the best
                             if curr_iou>best_iou_for_bbox[bbox_num]:
                                 best_iou_for_bbox[bbox_num] = curr_iou
-                                best_anchor_for_bbox[bbox_num,:] = [x, y, anchor_scale_idx, anchor_ratio_idx]
+                                best_anchor_for_bbox[bbox_num,:] = [x1, y1, x2, y2]
                                 
                                 if curr_iou>best_iou_for_anchor:
                                     best_iou_for_anchor = curr_iou
