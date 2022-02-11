@@ -25,3 +25,10 @@ num_samples = 256
 horizontal_flip = True
 vertical_flip = False
 rotate = False
+
+#Train
+lambda_rpn_regr = 1.0
+lambda_rpn_cls = 1.0
+
+lambda_clf_regr = 1.0
+lambda_clf_cls = 1.0
