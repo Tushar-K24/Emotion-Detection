@@ -47,10 +47,11 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
 
     best_iou_for_bbox = np.zeros(num_bboxes)
     best_anchor_for_bbox = np.zeros((num_bboxes,4))
-    
+    best_dx_for_bbox = np.zeros((num_bboxes,4)) # tx, ty, tw, th (for loss)
+
     y_rpn_overlap = np.zeros((out_width, out_height, num_anchors)) #represents if that anchor overlaps with gt_bbox
     y_is_box_valid = np.zeros((out_width, out_height, num_anchors)) #represents if that anchor has an object 
-    y_rpn_regr = np.zeros((out_width, out_height, 4*num_anchors)) #x,y,w,h for every positive class
+    y_rpn_regr = np.zeros((out_width, out_height, 4*num_anchors)) #tx,ty,tw,th for every positive class
 
     # calculating ground truth bounding boxes
     gt_bboxes[:,0] = imdb['x1']
@@ -62,8 +63,6 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
         for anchor_ratio_idx, anchor_ratio in enumerate(anchor_box_ratios):
             anchor_x = anchor_scale*anchor_ratio[0]
             anchor_y = anchor_scale*anchor_ratio[1]
-
-            idx = len(anchor_box_ratios)*anchor_scale_idx + anchor_ratio_idx
 
             for x in range(out_width):
                 x1 = downscale*x - anchor_x/2
@@ -86,45 +85,38 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
 
                         curr_iou = iou(anchor_box, gt_bboxes[bbox_num]) #iou of anchor_box and current gt
                         
-                        #if curr_iou > C.rpn_max_overlap or curr_iou>best_iou_for_bbox[bbox_num]:
+                        if curr_iou > C.rpn_max_overlap or curr_iou>best_iou_for_bbox[bbox_num]:
                             #center of gt bbox
-                            #cx = (gt_bboxes[bbox_num,0] + gt_bboxes[bbox_num,2])/2
-                            #cy = (gt_bboxes[bbox_num,1] + gt_bboxes[bbox_num,3])/2
-                            
+                            cx = (gt_bboxes[bbox_num,0] + gt_bboxes[bbox_num,2])/2
+                            cy = (gt_bboxes[bbox_num,1] + gt_bboxes[bbox_num,3])/2
                             #center of anchor box
-                            #cxa = (x1 + x2)/2
-                            #cya = (y1 + y2)/2
+                            cxa = (x1 + x2)/2
+                            cya = (y1 + y2)/2
 
                             #calculating dx (from the original paper)
-                            #tx = (cx - cxa)/(x2 - x1)
-                            #ty = (cy - cya)/(y2 - y1)
-                            #tw = np.log((gt_bboxes[bbox_num,2]-gt_bboxes[bbox_num,0])/(x2-x1))
-                            #th = np.log((gt_bboxes[bbox_num,3]-gt_bboxes[bbox_num,1])/(y2-y1))
-                       
+                            tx = (cx - cxa)/(x2 - x1)
+                            ty = (cy - cya)/(y2 - y1)
+                            tw = np.log((gt_bboxes[bbox_num,2]-gt_bboxes[bbox_num,0])/(x2-x1))
+                            th = np.log((gt_bboxes[bbox_num,3]-gt_bboxes[bbox_num,1])/(y2-y1))
+                        
                         if imdb['class'][bbox_num]!='bg':
-                            
-                            #setting up rpn regressor
-                            if curr_iou > C.rpn_max_overlap:
-                                y_rpn_regr[x,y,4*idx:4*idx+4] = [x1, y1, x2, y2]
-                            
-                            elif curr_iou < C.rpn_min_overlap:
-                                y_rpn_regr[x,y,4*idx:4*idx+4] = [x1, y1, x2, y2]
-
                             #mapping every gt_bbox with an anchor box to see which one's the best
                             if curr_iou>best_iou_for_bbox[bbox_num]:
                                 best_iou_for_bbox[bbox_num] = curr_iou
-                                best_anchor_for_bbox[bbox_num,:] = [x1, y1, x2, y2]
+                                best_anchor_for_bbox[bbox_num,:] = [x,y,anchor_scale_idx, anchor_ratio_idx]
+                                best_dx_for_bbox[bbox_num,:] = [tx,ty,tw,th]
                                 
                                 if curr_iou>best_iou_for_anchor:
                                     best_iou_for_anchor = curr_iou
-                                    best_rpn_regr = [x1, y1, x2, y2]
+                                    best_rpn_regr = [tx,ty,tw,th]
 
                                 if curr_iou>C.rpn_max_overlap:
                                     bbox_type = 'pos'
-
                                 elif C.rpn_min_overlap<curr_iou<C.rpn_max_overlap and bbox_type == 'neg':
                                     bbox_type = 'neutral'
                     
+                    idx = len(anchor_box_ratios)*anchor_scale_idx + anchor_ratio_idx
+
                     if bbox_type == 'neg':
                         y_is_box_valid[x,y,idx] = 1
                         y_rpn_overlap[x,y,idx] = 0
@@ -148,7 +140,7 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
         idx = len(anchor_box_ratios)*anchor_scale_idx + anchor_ratio_idx
         y_is_box_valid[x,y,idx] = 1
         y_rpn_overlap[x,y,idx] = 1
-        y_rpn_regr[x,y,4*idx:4*idx+4] = best_anchor_for_bbox[bbox_num,:]
+        y_rpn_regr[x,y,4*idx:4*idx+4] = best_dx_for_bbox[bbox_num,:]
                         
     #total count of samples should not exceed 256, 128 for both ideally
     positive_anchors = np.where((y_is_box_valid==1)&(y_rpn_overlap==1)) #stores the indices of positive anchors
