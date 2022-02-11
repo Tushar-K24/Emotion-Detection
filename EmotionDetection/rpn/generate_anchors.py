@@ -85,7 +85,7 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
 
                         curr_iou = iou(anchor_box, gt_bboxes[bbox_num]) #iou of anchor_box and current gt
                         
-                        if curr_iou > C.rpn_max_overlap or curr_iou>best_iou_for_bbox[bbox_num]:
+                        if curr_iou >= C.rpn_max_overlap or curr_iou>best_iou_for_bbox[bbox_num]:
                             #center of gt bbox
                             cx = (gt_bboxes[bbox_num,0] + gt_bboxes[bbox_num,2])/2
                             cy = (gt_bboxes[bbox_num,1] + gt_bboxes[bbox_num,3])/2
@@ -110,7 +110,7 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
                                     best_iou_for_anchor = curr_iou
                                     best_rpn_regr = [tx,ty,tw,th]
 
-                                if curr_iou>C.rpn_max_overlap:
+                                if curr_iou>=C.rpn_max_overlap:
                                     bbox_type = 'pos'
                                 elif C.rpn_min_overlap<curr_iou<C.rpn_max_overlap and bbox_type == 'neg':
                                     bbox_type = 'neutral'
