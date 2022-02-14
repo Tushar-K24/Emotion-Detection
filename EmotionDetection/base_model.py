@@ -62,15 +62,12 @@ class Base(Layer):
         '''
         
         #if input_tensor is None
-        if not input_tensor:
+        if input_tensor==None:
             input_shape = (None, None, self.num_channels)
             input_tensor = Input(shape = input_shape)
         
-        if not K.is_keras_tensor(input_tensor): #Converting input_tensor to appropriate dtype
-            input_img = Input(tensor = input_tensor)
-        else:
-            input_img = input_tensor
-
+        input_img = input_tensor
+        
         self.img_shape = input_img.get_shape() #input_shape
 
         #Block 1
