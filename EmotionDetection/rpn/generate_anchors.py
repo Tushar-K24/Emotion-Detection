@@ -49,9 +49,9 @@ def generate_anchor_boxes(imdb, resized_width, resized_height, width, height):
     best_anchor_for_bbox = np.zeros((num_bboxes,4))
     best_dx_for_bbox = np.zeros((num_bboxes,4)) # tx, ty, tw, th (for loss)
 
-    y_rpn_overlap = np.zeros((out_width, out_height, num_anchors)) #represents if that anchor overlaps with gt_bbox
-    y_is_box_valid = np.zeros((out_width, out_height, num_anchors)) #represents if that anchor has an object 
-    y_rpn_regr = np.zeros((out_width, out_height, 4*num_anchors)) #tx,ty,tw,th for every positive class
+    y_rpn_overlap = np.zeros((out_width, out_height, num_anchors)).astype(np.float32) #represents if that anchor overlaps with gt_bbox
+    y_is_box_valid = np.zeros((out_width, out_height, num_anchors)).astype(np.float32) #represents if that anchor has an object 
+    y_rpn_regr = np.zeros((out_width, out_height, 4*num_anchors)).astype(np.float32) #tx,ty,tw,th for every positive class
 
     # calculating ground truth bounding boxes
     gt_bboxes[:,0] = imdb['x1']
