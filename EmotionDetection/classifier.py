@@ -1,5 +1,29 @@
 from keras.layers import Flatten, Dense, Dropout
+from keras import backend as K
+from keras.objectives import categorical_crossentropy
+import tensorflow as tf
+
+import config as C
+
 import roi_pooling
+
+def clf_regr_loss(num_classes,beta = 1):
+    '''
+    Smooth L1 loss:
+        0.5*x*x/beta, if abs(x)<beta
+        abs(x) - 0.5*beta, else
+    '''
+    def loss_fn(y_true, y_pred):
+        x = abs(y_true[:,:,4*num_classes:] - y_pred)
+        x_bool = K.cast(x<beta, tf.float32)
+        n_reg = K.sum(1e-4 + y_true[:,:,:4*num_classes])
+        return C.lambda_clf_regr*K.sum(y_true[:,:,:4*num_classes]*(x_bool*0.5*x*x/beta + (1-x_bool)*(x-0.5*beta)))/n_reg
+
+    return loss_fn
+
+def clf_cls_loss(y_true, y_pred):
+    return C.lambda_clf_cls*K.mean(categorical_crossentropy(y_true,y_pred))
+    
 
 def classifier_layer(fmap, input_rois, num_rois, num_classes=4, pool_size=7):
     '''
