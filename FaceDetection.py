@@ -3,7 +3,7 @@ import tensorflow as tf
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 cap = cv2.VideoCapture(0)
-clf = tf.keras.models.load_model('fer.h5')
+clf = tf.keras.models.load_model('model.h5')
 labels = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 num2emotion = {i:em for i,em in enumerate(labels)}
 while True:
